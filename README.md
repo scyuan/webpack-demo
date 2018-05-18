@@ -313,3 +313,56 @@ You can also set it to 'none' to disable any default behavior. Learn more: https
 ```
 打包成功，有警告是因为没有指定模式。
 
+#### 使用webpack构建本地服务器
+
+想不想让你的浏览器监听你的代码的修改，并自动刷新显示修改后的结果，其实Webpack提供一个可选的本地开发服务器，这个本地服务器基于node.js构建，可以实现你想要的这些功能，不过它是一个单独的组件，在webpack中进行配置之前需要单独安装它作为项目依赖
+
+```bash
+npm install --save-dev webpack-dev-server
+```
+试了了一下上面的命令，下载龟速...还是选择cnpm
+
+下载完之后，可在webpack.config.js配置devServer（通过配置文件配置更加快捷吧）,也可使用命令行
+
+[英文文档 webpack DevServer](https://webpack.js.org/configuration/dev-server/)
+
+里面讲了很多配置项，下面简单讲一下几个
+
+
+配置项名称 | 作用
+---|---
+contentBase | 本地服务器所加载的资源所在的目录（注意是目录，即webpack会去哪个目录找文件）
+port | 端口（默认是8080）
+inline | 是否实时刷新
+host | 主机（默认localhost）
+open | 是否自动开启浏览器
+... | ...
+
+```JavaScript
+devServer: {
+    contentBase: "./dist",                 //本地服务器所加载的页面所在的目录
+    historyApiFallback: true,              //不跳转
+    inline: true                           //实时刷新
+    open:false,
+  } 
+```
+package.json中的scripts添加start
+
+```json
+"scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node_modules/.bin/webpack",
+    "server": "webpack-dev-server"
+  },
+```
+
+运行成功
+
+此时修改入口文件index.js的内容，回到浏览器可以实时刷新。
+
+#### loader
+
+> **官方说法：** loader 用于对模块的源代码进行转换。loader 可以使你在 import 或"加载"模块时预处理文件。因此，loader 类似于其他构建工具中“任务(task)”，并提供了处理前端构建步骤的强大方法。loader 可以将文件从不同的语言（如 TypeScript）转换为 JavaScript，或将内联图像转换为 data URL。loader 甚至允许你直接在 JavaScript 模块中 import CSS文件！
+
+
+
