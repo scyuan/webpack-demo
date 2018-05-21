@@ -344,16 +344,15 @@ devServer: {
     historyApiFallback: true,              //不跳转
     inline: true                           //实时刷新
     open:false,
-  } 
+} 
 ```
 package.json中的scripts添加start
 
 ```json
 "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node_modules/.bin/webpack",
     "server": "webpack-dev-server"
-  },
+},
 ```
 
 运行成功
@@ -364,5 +363,229 @@ package.json中的scripts添加start
 
 > **官方说法：** loader 用于对模块的源代码进行转换。loader 可以使你在 import 或"加载"模块时预处理文件。因此，loader 类似于其他构建工具中“任务(task)”，并提供了处理前端构建步骤的强大方法。loader 可以将文件从不同的语言（如 TypeScript）转换为 JavaScript，或将内联图像转换为 data URL。loader 甚至允许你直接在 JavaScript 模块中 import CSS文件！
 
+##### 接下来将配置一个vue开发环境
+
+###### 下载依赖
+
+```bash
+cnpm install 
+webpack 
+webpack-dev-server 
+vue-loader 
+vue-html-loader 
+css-loader 
+vue-style-loader 
+vue-hot-reload-api 
+babel-loader 
+babel-core 
+babel-plugin-transform-runtime 
+babel-preset-es2015 
+babel-runtime@5
+vue-template-compiler
+--save-dev
+```
+
+下载完之后运行npm run server，报错:说模块代码转化失败，你可能需要一个适当的loader来处理.vue的文件。
+哦，应该是我们没有配置相关的loader
+
+```bash
+ERROR in ./src/App.vue
+Module parse failed: Unexpected token (1:0)
+You may need an appropriate loader to handle this file type.
+| <template>
+|   <div id="app">
+|     yuansichao
+ @ ./src/index.js 3:0-28 10:16-19
+ @ multi ./node_modules/_webpack-dev-server@3.1.4@webpack-dev-server/client?http://localhost:8080 ./src/index.js
+ ```
+
+简单配置vue-loader之后
+```JavaScript
+module:{
+    rules:[{
+      test: /\.vue$/,
+      loader: 'vue-loader',
+    }]
+  }
+```
+
+再次运行还是出错
+
+```bash
+ERROR in ./src/App.vue?vue&type=template&id=7ba5bd90
+Module parse failed: Unexpected token (2:0)
+You may need an appropriate loader to handle this file type.
+|
+| <div id="app">
+|   yuansichao
+| </div>
+ @ ./src/App.vue 1:0-81 11:2-8 12:2-17
+ @ ./src/index.js
+ @ multi ./node_modules/_webpack-dev-server@3.1.4@webpack-dev-server/client?http://localhost:8080 ./src/index.js
+
+ERROR in ./src/App.vue
+vue-loader was used without the corresponding plugin. Make sure to include VueLoaderPlugin in your webpack config.
+ @ ./src/index.js 3:0-28 10:16-19
+ @ multi ./node_modules/_webpack-dev-server@3.1.4@webpack-dev-server/client?http://localhost:8080 ./src/index.js
+```
+
+错误是vue-loader was used without the corresponding plugin. Make sure to include VueLoaderPlugin in your webpack config.
+
+查看vue-loader官方文档
+
+> Vue Loader 的配置和其它的 loader 不太一样。除了通过一条规则将 vue-loader 应用到所有扩展名为 .vue 的文件上之外，请确保在你的 webpack 配置中添加 Vue Loader 的插件：
+
+```bash
+// webpack.config.js
+const { VueLoaderPlugin } = require('vue-loader')
+
+module.exports = {
+  module: {
+    rules: [
+      // ... 其它规则
+      {
+        test: /\.vue$/,
+        loader: 'vue-loader'
+      }
+    ]
+  },
+  plugins: [
+    // 请确保引入这个插件！
+    new VueLoaderPlugin()
+  ]
+}
+```
+
+**这个插件是必须的**它的职责是将你定义过的其它规则复制并应用到 .vue 文件里相应语言的块。例如，如果你有一条匹配 /\.js$/ 的规则，那么它会应用到 .vue 文件里的< script >块。
+
+一个更完整的 webpack 配置示例看起来像这样：
+
+```JavaScript
+// webpack.config.js
+const path = require('path')
+const { VueLoaderPlugin } = require('vue-loader')
+
+module.exports = {
+  mode: 'development',
+  module: {
+    rules: [
+      {
+        test: /\.vue$/,
+        loader: 'vue-loader'
+      },
+      // 它会应用到普通的 `.js` 文件
+      // 以及 `.vue` 文件中的 `<script>` 块
+      {
+        test: /\.js$/,
+        loader: 'babel-loader'
+      },
+      // 它会应用到普通的 `.css` 文件
+      // 以及 `.vue` 文件中的 `<style>` 块
+      {
+        test: /\.css$/,
+        use: [
+          'vue-style-loader',
+          'css-loader'
+        ]
+      }
+    ]
+  },
+  plugins: [
+    // 请确保引入这个插件来施展魔法
+    new VueLoaderPlugin()
+  ]
+}
+```
+
+修改完之后可以运行但是无法显示页面，页面报错
+
+You are using the runtime-only build of Vue where the template compiler is not available. Either pre-compile the templates into render functions, or use the compiler-included build.
+
+所以是还需要配置vue-template-compiler？但是在网上找了一番，发现并不需要配置，那问题在哪？发现main.js的写法写的貌似和官方的不一样
+
+改之前
+```JavaScript
+new Vue({
+  el: '#app',
+  components: { App },
+  template: '<App/>'
+})
+```
+改之后
+```JavaScript
+new Vue({
+  el: '#app',
+  render: h => h(App)
+})
+```
+
+重新运行，完美运行！但这个时候我们的.vue里面还是没有js和css，我们再次试一下写了子组件
+
+代码自动更新
+
+###### 增加CSS
+
+在.vue中的style标签里面新增css代码，代码更新之后，报错（显然会报错啊🤣）
+
+```bash
+ERROR in ./src/App.vue?vue&type=style&index=0&id=7ba5bd90&scoped=true&lang=css (./node_modules/_vue-loader@15.1.0@vue-loader/lib??vue-loader-options!./src/App.vue?vue&type=style&index=0&id=7ba5bd90&scoped=true&lang=css)
+Module parse failed: Unexpected character '#' (17:0)
+You may need an appropriate loader to handle this file type.
+```
+
+在webpack.config.js中配置css-loader(这只是一个很常见的loader,还有其他常见的loader)
+
+```JavaScript
+// 它会应用到普通的 `.css` 文件
+// 以及 `.vue` 文件中的 `<style>` 块
+{
+    test: /\.css$/,
+    use: [
+        'vue-style-loader',
+        'css-loader'
+    ]
+}
+```
+
+之后就可以在style里面愉快的书写css了
+
+###### 增加JavaScript代码
+
+在App的mounted的生命周期函数里面打印一段代码，并尝试使用ES6的语法（貌似使用ES5都是没问题的）。也没问题；(目前是没发现生命问题，可能是v8引擎支持的ES6语法比较多吧)
+
+###### 简单的到这，发现已经可以基本的使用vue了，但是还有一个问题。官方的index.html文件是默认在根目录的。并且包括引入js文件。而我们的是在dist文件里面。并且需要手动引入js文件。因为我们的devServer配置：
+
+```JavaScript
+devServer: {
+    contentBase: "./dist",                 //本地服务器所加载的页面所在的目录
+    historyApiFallback: true,              //不跳转
+    inline: true,                          //实时刷新
+    open:false,
+},
+```
+
+那如何做到那样呢？本地运行的时候根目录是一个index.html文件，打包到dist目录的时候，连同index.html一起打包到dist目录？
+
+查看官方vue-cli生成的项目，在webpack.dev.config.js配置了一个HtmlWebpackPlugin。由此猜测是因为这个引起的。所以我尝试了一下。
+
+在webpack.config.js中plugins中加入，需要先引入HtmlWebpackPlugin插件
+
+```JavaScript
+new HtmlWebpackPlugin({
+    filename: 'index.html',
+    template: 'index.html',
+    inject: true
+})
+```
+然后删除dist下面的index.html文件。并移除到根目录下，删除index.html下引入js的代码。devSever并没有改变配置,重新运行，成功，这也行？？？文档说，会在dist（也就是output的path）目录下生成一个index.html，(但实际上是没有生成的)
+
+```JavaScript
+devServer: {
+    contentBase: "./dist",                 //本地服务器所加载的页面所在的目录
+    historyApiFallback: true,              //不跳转
+    inline: true,                          //实时刷新
+    open:false,
+  },
+```
 
 
